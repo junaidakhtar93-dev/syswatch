@@ -1,0 +1,331 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>SysWatch — IT Monitoring Dashboard</title>
+<script src="https://cdn.plot.ly/plotly-2.27.0.min.js"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet"/>
+<style>
+:root{--bg:#07090f;--surface:#0e1420;--card:#131c2e;--border:#1e2d47;--accent:#38bdf8;--green:#34d399;--yellow:#fbbf24;--red:#f87171;--purple:#a78bfa;--text:#dde6f0;--muted:#6b85a8;--radius:10px}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg);color:var(--text);font-family:'Inter',sans-serif;font-size:14px;min-height:100vh}
+
+/* LAYOUT */
+.layout{display:grid;grid-template-columns:220px 1fr;min-height:100vh}
+
+/* SIDEBAR */
+.sidebar{background:var(--surface);border-right:1px solid var(--border);padding:24px 0;display:flex;flex-direction:column}
+.sidebar-logo{padding:0 20px 24px;border-bottom:1px solid var(--border);margin-bottom:16px}
+.logo-mark{font-size:1.3rem;font-weight:800;color:var(--accent);letter-spacing:-1px}
+.logo-sub{font-size:.7rem;color:var(--muted);text-transform:uppercase;letter-spacing:1.5px;margin-top:2px}
+.nav-section{padding:0 12px;margin-bottom:8px}
+.nav-label{font-size:.65rem;font-weight:600;text-transform:uppercase;letter-spacing:1.5px;color:var(--muted);padding:6px 8px;margin-bottom:4px}
+.nav-item{display:flex;align-items:center;gap:10px;padding:9px 12px;border-radius:8px;cursor:pointer;color:var(--muted);font-weight:500;font-size:.88rem;transition:.15s;text-decoration:none;margin-bottom:2px}
+.nav-item:hover{background:rgba(56,189,248,.07);color:var(--text)}
+.nav-item.active{background:rgba(56,189,248,.12);color:var(--accent)}
+.nav-icon{width:18px;text-align:center;font-size:.95rem}
+.sidebar-bottom{margin-top:auto;padding:16px 20px;border-top:1px solid var(--border)}
+.user-info{display:flex;align-items:center;gap:10px}
+.avatar{width:32px;height:32px;border-radius:50%;background:linear-gradient(135deg,var(--accent),var(--purple));display:flex;align-items:center;justify-content:center;font-weight:700;font-size:.8rem;color:#07090f}
+.user-name{font-weight:600;font-size:.85rem}
+.user-role{font-size:.72rem;color:var(--muted)}
+.status-dot{width:8px;height:8px;border-radius:50%;background:var(--green);margin-left:auto;box-shadow:0 0 6px var(--green)}
+
+/* MAIN */
+.main{display:flex;flex-direction:column;overflow:hidden}
+.topbar{background:var(--surface);border-bottom:1px solid var(--border);padding:16px 28px;display:flex;align-items:center;justify-content:space-between;gap:16px}
+.topbar-title{font-size:1.15rem;font-weight:700;letter-spacing:-.4px}
+.topbar-right{display:flex;align-items:center;gap:12px}
+.topbar-time{font-family:'JetBrains Mono',monospace;font-size:.82rem;color:var(--muted)}
+.badge{font-size:.7rem;font-weight:700;padding:3px 9px;border-radius:5px;text-transform:uppercase;letter-spacing:.5px}
+.badge-green{background:rgba(52,211,153,.12);color:var(--green)}
+.badge-yellow{background:rgba(251,191,36,.12);color:var(--yellow)}
+.badge-red{background:rgba(248,113,113,.12);color:var(--red)}
+.refresh-btn{background:rgba(56,189,248,.1);border:1px solid rgba(56,189,248,.25);color:var(--accent);padding:7px 14px;border-radius:7px;cursor:pointer;font-size:.82rem;font-weight:600;transition:.15s}
+.refresh-btn:hover{background:rgba(56,189,248,.2)}
+
+/* CONTENT */
+.content{padding:24px 28px;flex:1;overflow-y:auto}
+
+/* SUMMARY CARDS */
+.summary-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:24px}
+.sum-card{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:20px;position:relative;overflow:hidden;transition:.2s}
+.sum-card:hover{border-color:rgba(56,189,248,.3)}
+.sum-card::before{content:'';position:absolute;top:0;left:0;right:0;height:3px}
+.sum-card.blue::before{background:var(--accent)}
+.sum-card.green::before{background:var(--green)}
+.sum-card.yellow::before{background:var(--yellow)}
+.sum-card.purple::before{background:var(--purple)}
+.sum-icon{font-size:1.5rem;margin-bottom:10px}
+.sum-val{font-size:2rem;font-weight:700;font-family:'JetBrains Mono',monospace;letter-spacing:-1px;line-height:1}
+.sum-label{font-size:.78rem;color:var(--muted);margin-top:5px;font-weight:500}
+.sum-trend{font-size:.72rem;margin-top:6px}
+.trend-up{color:var(--green)}
+.trend-down{color:var(--red)}
+
+/* CHART GRID */
+.chart-row{display:grid;gap:16px;margin-bottom:20px}
+.chart-row.two{grid-template-columns:1fr 1fr}
+.chart-row.three-one{grid-template-columns:2fr 1fr}
+.chart-card{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:20px}
+.chart-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px}
+.chart-title{font-weight:700;font-size:.95rem;letter-spacing:-.2px}
+.chart-sub{font-size:.72rem;color:var(--muted);margin-top:2px}
+.chart-actions{display:flex;gap:6px}
+.chip{font-size:.7rem;padding:3px 9px;border-radius:5px;cursor:pointer;border:1px solid var(--border);color:var(--muted);transition:.15s}
+.chip.active,.chip:hover{border-color:var(--accent);color:var(--accent);background:rgba(56,189,248,.07)}
+
+/* ALERTS TABLE */
+.table-card{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:20px;margin-bottom:20px}
+table{width:100%;border-collapse:collapse}
+th{text-align:left;font-size:.7rem;font-weight:600;text-transform:uppercase;letter-spacing:1px;color:var(--muted);padding:0 12px 12px;border-bottom:1px solid var(--border)}
+td{padding:11px 12px;font-size:.83rem;border-bottom:1px solid rgba(30,45,71,.5)}
+tr:last-child td{border-bottom:none}
+tr:hover td{background:rgba(255,255,255,.02)}
+.sev-chip{font-size:.68rem;font-weight:700;padding:2px 8px;border-radius:4px;text-transform:uppercase;letter-spacing:.5px}
+.sev-low{background:rgba(107,133,168,.1);color:var(--muted)}
+.sev-medium{background:rgba(251,191,36,.1);color:var(--yellow)}
+.sev-high{background:rgba(248,113,113,.12);color:var(--red)}
+.sev-critical{background:rgba(248,113,113,.2);color:#ff4d4d}
+.res-yes{color:var(--green);font-size:.8rem}
+.res-no{color:var(--red);font-size:.8rem}
+.mono{font-family:'JetBrains Mono',monospace;font-size:.78rem;color:var(--muted)}
+
+/* SERVER HEALTH MINI CARDS */
+.health-grid{display:grid;grid-template-columns:1fr;gap:10px}
+.health-item{display:flex;align-items:center;gap:12px;padding:12px;background:var(--surface);border:1px solid var(--border);border-radius:8px}
+.health-dot{width:10px;height:10px;border-radius:50%;flex-shrink:0}
+.health-dot.online{background:var(--green);box-shadow:0 0 6px var(--green)}
+.health-dot.warning{background:var(--yellow);box-shadow:0 0 6px var(--yellow)}
+.health-name{flex:1;font-weight:600;font-size:.82rem}
+.health-id{font-size:.7rem;color:var(--muted);font-family:'JetBrains Mono',monospace}
+.health-bars{display:flex;gap:6px;align-items:center}
+.mini-bar-wrap{display:flex;flex-direction:column;align-items:center;gap:2px}
+.mini-bar-label{font-size:.6rem;color:var(--muted)}
+.mini-bar{width:32px;height:4px;border-radius:2px;background:var(--border)}
+.mini-bar-fill{height:100%;border-radius:2px;transition:.3s}
+.fill-green{background:var(--green)}
+.fill-yellow{background:var(--yellow)}
+.fill-red{background:var(--red)}
+</style>
+</head>
+<body>
+<div class="layout">
+
+<!-- SIDEBAR -->
+<aside class="sidebar">
+  <div class="sidebar-logo">
+    <div class="logo-mark">SysWatch</div>
+    <div class="logo-sub">Infrastructure Monitor</div>
+  </div>
+  <div class="nav-section">
+    <div class="nav-label">Monitor</div>
+    <a class="nav-item active" href="#"><span class="nav-icon">📊</span> Dashboard</a>
+    <a class="nav-item" href="#"><span class="nav-icon">🖥️</span> Servers</a>
+    <a class="nav-item" href="#"><span class="nav-icon">📡</span> Network</a>
+    <a class="nav-item" href="#"><span class="nav-icon">🔔</span> Alerts <span style="margin-left:auto;background:var(--red);color:#fff;font-size:.65rem;padding:1px 6px;border-radius:999px">3</span></a>
+  </div>
+  <div class="nav-section">
+    <div class="nav-label">Manage</div>
+    <a class="nav-item" href="#"><span class="nav-icon">🎫</span> Tickets</a>
+    <a class="nav-item" href="#"><span class="nav-icon">📋</span> Reports</a>
+    <a class="nav-item" href="#"><span class="nav-icon">⚙️</span> Settings</a>
+  </div>
+  <div class="sidebar-bottom">
+    <div class="user-info">
+      <div class="avatar">JA</div>
+      <div>
+        <div class="user-name">Junaid Akhtar</div>
+        <div class="user-role">System Support Officer</div>
+      </div>
+      <div class="status-dot"></div>
+    </div>
+  </div>
+</aside>
+
+<!-- MAIN -->
+<div class="main">
+  <div class="topbar">
+    <div>
+      <div class="topbar-title">Infrastructure Overview</div>
+    </div>
+    <div class="topbar-right">
+      <span class="topbar-time" id="clock">Mar 15, 2024 · 09:41:22</span>
+      <span class="badge badge-green">● All Systems</span>
+      <button class="refresh-btn" onclick="loadAll()">↻ Refresh</button>
+    </div>
+  </div>
+
+  <div class="content">
+
+    <!-- SUMMARY -->
+    <div class="summary-grid" id="summary-grid">
+      <div class="sum-card blue"><div class="sum-icon">🖥️</div><div class="sum-val" id="s-servers">5</div><div class="sum-label">Total Servers</div><div class="sum-trend trend-up">4 online · 1 warning</div></div>
+      <div class="sum-card green"><div class="sum-icon">📶</div><div class="sum-val" id="s-uptime">99.1%</div><div class="sum-label">Avg Uptime (2023)</div><div class="sum-trend trend-up">↑ 0.3% vs last month</div></div>
+      <div class="sum-card yellow"><div class="sum-icon">🎫</div><div class="sum-val" id="s-tickets">9</div><div class="sum-label">Open Tickets</div><div class="sum-trend trend-down">↑ 2 since yesterday</div></div>
+      <div class="sum-card purple"><div class="sum-icon">🔔</div><div class="sum-val" id="s-alerts">3</div><div class="sum-label">Alerts Today</div><div class="sum-trend trend-up">2 resolved</div></div>
+    </div>
+
+    <!-- UPTIME + HEALTH -->
+    <div class="chart-row three-one">
+      <div class="chart-card">
+        <div class="chart-header">
+          <div>
+            <div class="chart-title">Server Uptime — 2023</div>
+            <div class="chart-sub">Monthly availability % per endpoint</div>
+          </div>
+          <div class="chart-actions">
+            <span class="chip active">2023</span>
+            <span class="chip">2022</span>
+          </div>
+        </div>
+        <div id="chart-uptime" style="height:260px"></div>
+      </div>
+      <div class="chart-card">
+        <div class="chart-header">
+          <div><div class="chart-title">Server Health</div><div class="chart-sub">Live resource usage</div></div>
+        </div>
+        <div class="health-grid" id="health-grid">
+          <div style="color:var(--muted);font-size:.82rem">Loading...</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- TICKETS + NETWORK -->
+    <div class="chart-row two">
+      <div class="chart-card">
+        <div class="chart-header">
+          <div><div class="chart-title">Ticket Volume — 2023</div><div class="chart-sub">Opened · Resolved · Escalated</div></div>
+        </div>
+        <div id="chart-tickets" style="height:250px"></div>
+      </div>
+      <div class="chart-card">
+        <div class="chart-header">
+          <div><div class="chart-title">Network Throughput</div><div class="chart-sub">Last 30 days (Mbps)</div></div>
+        </div>
+        <div id="chart-network" style="height:250px"></div>
+      </div>
+    </div>
+
+    <!-- ALERTS TABLE -->
+    <div class="table-card">
+      <div class="chart-header">
+        <div><div class="chart-title">Recent Alerts</div><div class="chart-sub">Last 20 system events — Feb / Mar 2024</div></div>
+      </div>
+      <table id="alerts-table">
+        <thead><tr>
+          <th>#</th><th>Timestamp</th><th>Server</th><th>Category</th><th>Severity</th><th>Status</th>
+        </tr></thead>
+        <tbody id="alerts-body"><tr><td colspan="6" style="color:var(--muted);text-align:center;padding:20px">Loading…</td></tr></tbody>
+      </table>
+    </div>
+
+  </div><!-- /content -->
+</div><!-- /main -->
+</div><!-- /layout -->
+
+<script>
+const PLOTLY_LAYOUT = (title) => ({
+  paper_bgcolor:'transparent', plot_bgcolor:'transparent',
+  font:{family:'Inter',color:'#6b85a8',size:11},
+  margin:{t:10,b:36,l:44,r:10},
+  xaxis:{gridcolor:'#1e2d47',linecolor:'#1e2d47',tickfont:{color:'#6b85a8'}},
+  yaxis:{gridcolor:'#1e2d47',linecolor:'#1e2d47',tickfont:{color:'#6b85a8'}},
+  legend:{bgcolor:'transparent',font:{color:'#8899b4',size:10}},
+  hovermode:'x unified',
+  hoverlabel:{bgcolor:'#131c2e',bordercolor:'#1e2d47',font:{family:'Inter',color:'#dde6f0'}}
+});
+const CONFIG = {displayModeBar:false,responsive:true};
+
+async function fetchJSON(url){ const r = await fetch(url); return r.json(); }
+
+async function loadUptime(){
+  const d = await fetchJSON('/api/uptime');
+  const colors = ['#38bdf8','#34d399','#a78bfa','#fbbf24','#f87171'];
+  const traces = Object.entries(d.series).map(([id,vals],i)=>({
+    x:d.months, y:vals, name:id, type:'scatter', mode:'lines+markers',
+    line:{width:2,color:colors[i]}, marker:{size:5,color:colors[i]},
+    hovertemplate:`<b>${id}</b>: %{y}%<extra></extra>`
+  }));
+  const layout = {...PLOTLY_LAYOUT(), yaxis:{...PLOTLY_LAYOUT().yaxis, range:[97,100.1], ticksuffix:'%'}};
+  Plotly.newPlot('chart-uptime', traces, layout, CONFIG);
+}
+
+async function loadTickets(){
+  const d = await fetchJSON('/api/tickets');
+  const traces = [
+    {x:d.months,y:d.opened,  name:'Opened',   type:'bar',marker:{color:'rgba(56,189,248,.7)'},hovertemplate:'Opened: %{y}<extra></extra>'},
+    {x:d.months,y:d.resolved,name:'Resolved', type:'bar',marker:{color:'rgba(52,211,153,.7)'},hovertemplate:'Resolved: %{y}<extra></extra>'},
+    {x:d.months,y:d.escalated,name:'Escalated',type:'bar',marker:{color:'rgba(248,113,113,.7)'},hovertemplate:'Escalated: %{y}<extra></extra>'}
+  ];
+  const layout = {...PLOTLY_LAYOUT(), barmode:'group'};
+  Plotly.newPlot('chart-tickets', traces, layout, CONFIG);
+}
+
+async function loadNetwork(){
+  const d = await fetchJSON('/api/network');
+  const traces = [
+    {x:d.labels,y:d.inbound, name:'Inbound',  type:'scatter',mode:'lines',fill:'tozeroy',
+     fillcolor:'rgba(56,189,248,.08)',line:{color:'#38bdf8',width:2},hovertemplate:'In: %{y} Mbps<extra></extra>'},
+    {x:d.labels,y:d.outbound,name:'Outbound', type:'scatter',mode:'lines',fill:'tozeroy',
+     fillcolor:'rgba(167,139,250,.08)',line:{color:'#a78bfa',width:2},hovertemplate:'Out: %{y} Mbps<extra></extra>'}
+  ];
+  const layout = {...PLOTLY_LAYOUT(), yaxis:{...PLOTLY_LAYOUT().yaxis, ticksuffix:' Mb'}};
+  Plotly.newPlot('chart-network', traces, layout, CONFIG);
+}
+
+async function loadHealth(){
+  const servers = await fetchJSON('/api/health');
+  const grid = document.getElementById('health-grid');
+  grid.innerHTML = servers.map(s => {
+    const dot = s.status==='online'?'online':'warning';
+    const cpu_c = s.cpu>80?'fill-red':s.cpu>60?'fill-yellow':'fill-green';
+    const mem_c = s.memory>80?'fill-red':s.memory>60?'fill-yellow':'fill-green';
+    const dsk_c = s.disk>80?'fill-red':s.disk>60?'fill-yellow':'fill-green';
+    return `<div class="health-item">
+      <div class="health-dot ${dot}"></div>
+      <div>
+        <div class="health-name">${s.name}</div>
+        <div class="health-id">${s.id} · ${s.uptime_days}d up</div>
+      </div>
+      <div class="health-bars">
+        <div class="mini-bar-wrap"><div class="mini-bar-label">CPU</div><div class="mini-bar"><div class="mini-bar-fill ${cpu_c}" style="width:${s.cpu}%"></div></div><div class="mini-bar-label">${s.cpu}%</div></div>
+        <div class="mini-bar-wrap"><div class="mini-bar-label">MEM</div><div class="mini-bar"><div class="mini-bar-fill ${mem_c}" style="width:${s.memory}%"></div></div><div class="mini-bar-label">${s.memory}%</div></div>
+        <div class="mini-bar-wrap"><div class="mini-bar-label">DSK</div><div class="mini-bar"><div class="mini-bar-fill ${dsk_c}" style="width:${s.disk}%"></div></div><div class="mini-bar-label">${s.disk}%</div></div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+async function loadAlerts(){
+  const alerts = await fetchJSON('/api/alerts');
+  const sevClass = {low:'sev-low',medium:'sev-medium',high:'sev-high',critical:'sev-critical'};
+  document.getElementById('alerts-body').innerHTML = alerts.map(a=>`
+    <tr>
+      <td class="mono">#${a.id}</td>
+      <td class="mono">${a.time}</td>
+      <td><span style="color:var(--accent);font-weight:600">${a.server}</span></td>
+      <td>${a.category}</td>
+      <td><span class="sev-chip ${sevClass[a.severity]}">${a.severity}</span></td>
+      <td>${a.resolved?'<span class="res-yes">✓ Resolved</span>':'<span class="res-no">● Open</span>'}</td>
+    </tr>`).join('');
+}
+
+function updateClock(){
+  const now = new Date('2024-03-15T09:41:22');
+  const t = new Date(now.getTime() + (Date.now() % 86400000));
+  document.getElementById('clock').textContent =
+    'Mar 15, 2024 · ' + t.toTimeString().slice(0,8);
+}
+
+function loadAll(){
+  loadUptime(); loadTickets(); loadNetwork(); loadHealth(); loadAlerts();
+}
+
+loadAll();
+setInterval(updateClock, 1000);
+</script>
+</body>
+</html>
