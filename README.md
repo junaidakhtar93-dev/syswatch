@@ -2,6 +2,8 @@
 
 A demo IT-monitoring dashboard built with **FastAPI** and **Plotly.js**. It visualises server health, uptime trends, ticket flow, network throughput, and a recent-alerts feed across a small fleet of servers.
 
+> Originally built during my tenure as System Support Officer at Mid-Chain Technologies (2024–2026); this is a cleaned-up version with mock data for public sharing.
+
 > **Note:** This is a self-contained demo. The metrics are deterministically generated mock data (`random.seed(42)`), not a live feed — there's no database or real agent. It exists to showcase the dashboard UI and the FastAPI + Plotly data-flow.
 
 ## Features
